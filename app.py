@@ -71,10 +71,13 @@ def search_venues():
 def show_venue(venue_id):
   current_time = datetime.now().strftime("%Y-%m-%d, %H:%M:%S")
   # JOIN QUERY
-  venue = Venue.query.join(Show, Venue.shows).filter(Show.venue_id == venue_id).first()
+  venue = Venue.query.join(Show, Venue.shows, isouter=True).filter(Venue.id == venue_id).first()  # Left Outer JOIN to still have the venue details if no matching shows
   data = venue.serialize
   data['upcoming_shows'] = [show.serialize for show in venue.shows if show.serialize['start_time'] > current_time]
   data['past_shows'] = [show.serialize for show in venue.shows if show.serialize['start_time'] <= current_time]
+  data['upcoming_shows_count'] = len(data['upcoming_shows'])
+  data['past_shows_count'] = len(data['past_shows'])
+
   return render_template('pages/show_venue.html', venue=data)
 
 #  Create Venue
@@ -91,29 +94,18 @@ def create_venue_submission():
   if not form.validate():
     return render_template('forms/new_venue.html', form=form)
   try:
-    name = request.form.get('name')
-    city = request.form.get('city')
-    state = request.form.get('state')
-    address = request.form.get('address')
-    phone = request.form.get('phone')
-    genres = request.form.getlist('genres')
-    seeking_description = request.form.get('seeking_description')
-    seeking_talent = form.seeking_talent.data
-    facebook_link = request.form.get('facebook_link')
-    website_link = request.form.get('website_link')
-    image_link = request.form.get('image_link')
     venue = Venue(
-      name=name,
-      city=city,
-      state=state,
-      address=address,
-      phone=phone,
-      genres=genres,
-      seeking_description=seeking_description,
-      seeking_talent=seeking_talent,
-      facebook_link=facebook_link,
-      website_link=website_link,
-      image_link=image_link
+      name=request.form.get('name'),
+      city=request.form.get('city'),
+      state=request.form.get('state'),
+      address=request.form.get('address'),
+      phone=request.form.get('phone'),
+      genres=request.form.getlist('genres'),
+      seeking_description=request.form.get('seeking_description'),
+      seeking_talent=form.seeking_talent.data,
+      facebook_link=request.form.get('facebook_link'),
+      website_link=request.form.get('website_link'),
+      image_link=request.form.get('image_link')
     )
     db.session.add(venue)
     db.session.commit()
@@ -182,10 +174,12 @@ def search_artists():
 def show_artist(artist_id):
   current_time = datetime.now().strftime("%Y-%m-%d, %H:%M:%S")
   # JOIN QUERY
-  artist = Artist.query.join(Show, Artist.shows).filter(Show.artist_id == artist_id).first()
+  artist = Artist.query.join(Show, Artist.shows, isouter=True).filter(Artist.id == artist_id).first() # Left Outer JOIN to still have the venue details if no matching shows
   data = artist.serialize
   data['upcoming_shows'] = [show.serialize for show in artist.shows if show.serialize['start_time'] > current_time]
   data['past_shows'] = [show.serialize for show in artist.shows if show.serialize['start_time'] <= current_time]
+  data['upcoming_shows_count'] = len(data['upcoming_shows'])
+  data['past_shows_count'] = len(data['past_shows'])
 
   return render_template('pages/show_artist.html', artist=data)
 
@@ -279,28 +273,17 @@ def create_artist_submission():
   if not form.validate():
     return render_template('forms/new_artist.html', form=form)
   try:
-    name = request.form.get('name')
-    city = request.form.get('city')
-    state = request.form.get('state')
-    phone = request.form.get('phone')
-    genres = request.form.getlist('genres')
-    seeking_description = request.form.get('seeking_description')
-    seeking_venue = form.seeking_venue.data
-    facebook_link = request.form.get('facebook_link')
-    website_link = request.form.get('website_link')
-    image_link = request.form.get('image_link')
-
     artist = Artist(
-      name=name,
-      city=city,
-      state=state,
-      phone=phone,
-      genres=genres,
-      seeking_description=seeking_description,
-      seeking_venue=seeking_venue,
-      facebook_link=facebook_link,
-      website_link=website_link,
-      image_link=image_link
+      name=request.form.get('name'),
+      city=request.form.get('city'),
+      state=request.form.get('state'),
+      phone=request.form.get('phone'),
+      genres=request.form.getlist('genres'),
+      seeking_description=request.form.get('seeking_description'),
+      seeking_venue=form.seeking_venue.data,
+      facebook_link=request.form.get('facebook_link'),
+      website_link=request.form.get('website_link'),
+      image_link=request.form.get('image_link')
     )
     db.session.add(artist)
     db.session.commit()
