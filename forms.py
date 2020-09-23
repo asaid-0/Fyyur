@@ -1,14 +1,17 @@
 from datetime import datetime
+import re
 from flask_wtf import Form
-from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField
-from wtforms.validators import DataRequired, AnyOf, URL
+from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField, BooleanField
+from wtforms.validators import DataRequired, AnyOf, URL, ValidationError
 
 class ShowForm(Form):
     artist_id = StringField(
-        'artist_id'
+        'artist_id',
+        validators=[DataRequired()]
     )
     venue_id = StringField(
-        'venue_id'
+        'venue_id',
+        validators=[DataRequired()]
     )
     start_time = DateTimeField(
         'start_time',
@@ -89,7 +92,6 @@ class VenueForm(Form):
         'image_link'
     )
     genres = SelectMultipleField(
-        # TODO implement enum restriction
         'genres', validators=[DataRequired()],
         choices=[
             ('Alternative', 'Alternative'),
@@ -116,6 +118,22 @@ class VenueForm(Form):
     facebook_link = StringField(
         'facebook_link', validators=[URL()]
     )
+    website_link = StringField(
+        'website_link', validators=[URL()]
+    )
+    image_link = StringField(
+        'image_link', validators=[URL()]
+    )
+    seeking_talent = BooleanField(
+        'seeking_talent', default=False
+        
+    )
+    seeking_description = StringField(
+        'seeking_description'
+    )
+    def validate_phone(self, phone):
+        if not re.match("^([0-9]{3} |[0-9]{3}-|[0-9]{3})([0-9]{3} |[0-9]{3}-|[0-9]{3})[0-9]{4}$", phone.data):
+            raise ValidationError('Invalid phone number')
 
 class ArtistForm(Form):
     name = StringField(
@@ -181,14 +199,12 @@ class ArtistForm(Form):
         ]
     )
     phone = StringField(
-        # TODO implement validation logic for state
         'phone'
     )
     image_link = StringField(
         'image_link'
     )
     genres = SelectMultipleField(
-        # TODO implement enum restriction
         'genres', validators=[DataRequired()],
         choices=[
             ('Alternative', 'Alternative'),
@@ -213,8 +229,23 @@ class ArtistForm(Form):
         ]
     )
     facebook_link = StringField(
-        # TODO implement enum restriction
         'facebook_link', validators=[URL()]
     )
+    website_link = StringField(
+        'website_link', validators=[URL()]
+    )
+    image_link = StringField(
+        'image_link', validators=[URL()]
+    )
+    seeking_venue = BooleanField(
+        'seeking_venue', default=False
+        
+    )
+    seeking_description = StringField(
+        'seeking_description'
+    )
+    def validate_phone(self, phone):
+        if not re.match("^([0-9]{3} |[0-9]{3}-|[0-9]{3})([0-9]{3} |[0-9]{3}-|[0-9]{3})[0-9]{4}$", phone.data):
+            raise ValidationError('Invalid phone number')
 
 # TODO IMPLEMENT NEW ARTIST FORM AND NEW SHOW FORM

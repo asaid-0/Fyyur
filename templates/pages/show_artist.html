@@ -6,6 +6,8 @@
 		<h1 class="monospace">
 			{{ artist.name }}
 		</h1>
+		<a href="./{{ artist.id }}/edit"><button class="btn-primary">Edit</button></a>
+		<button class="btn-danger" onclick="deleteArtist({{ artist.id }})">Delete</button>
 		<p class="subtitle">
 			ID: {{ artist.id }}
 		</p>
