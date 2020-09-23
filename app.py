@@ -43,6 +43,7 @@ class Show(db.Model):
         return {
           "venue_id": self.venue_id,
           "venue_name": self.venue.name,
+          "venue_image_link": self.venue.image_link,
           "artist_id": self.artist_id,
           "artist_name": self.artist.name,
           "artist_image_link": self.artist.image_link,
@@ -66,19 +67,6 @@ class Venue(db.Model):
     seeking_talent = db.Column(db.Boolean)
     seeking_description = db.Column(db.String(500))
     # artists = db.relationship('Show', back_populates="venues")
-
-    def getShowsList(self, shows):
-      shows_list = []
-      for show in shows:
-        showObj = {
-          'artist_id': show.artist.id,
-          'artist_name': show.artist.name,
-          'artist_image_link': show.artist.image_link,
-          'start_time': show.start_time.strftime("%Y-%m-%d, %H:%M:%S")
-        }
-        shows_list.append(showObj)
-      return shows_list
-
     @property
     def serialize(self):
         return {
@@ -95,30 +83,7 @@ class Venue(db.Model):
             'seeking_talent': self.seeking_talent,
             'seeking_description': self.seeking_description
         }
-    @property
-    def populateShows(self):
-        current_time = datetime.now().strftime("%Y-%m-%d, %H:%M:%S")
-        upcoming_shows = Show.query.filter(Show.venue_id == self.id, Show.start_time > current_time).all()
-        past_shows = Show.query.filter(Show.venue_id == self.id, Show.start_time < current_time).all()
-        
-        return {
-            'id': self.id,
-            'name': self.name,
-            'city': self.city,
-            'state': self.state,
-            'address': self.address,
-            'phone': self.phone,
-            'image_link': self.image_link,
-            'website_link': self.website_link,
-            'facebook_link': self.facebook_link,
-            'genres': self.genres,
-            'seeking_talent': self.seeking_talent,
-            'seeking_description': self.seeking_description,
-            'upcoming_shows': self.getShowsList(upcoming_shows),
-            'past_shows': self.getShowsList(past_shows),
-            'upcoming_shows_count': len(upcoming_shows),
-            'past_shows_count': len(past_shows),
-        }
+
 class Artist(db.Model):
     __tablename__ = 'artists'
 
@@ -134,24 +99,8 @@ class Artist(db.Model):
     seeking_venue = db.Column(db.Boolean)
     seeking_description = db.Column(db.String)
 
-    def getShowsList(self, shows):
-      shows_list = []
-      for show in shows:
-        showObj = {
-          'venue_id': show.venue.id,
-          'venue_name': show.venue.name,
-          'venue_image_link': show.venue.image_link,
-          'start_time': show.start_time.strftime("%Y-%m-%d, %H:%M:%S")
-        }
-        shows_list.append(showObj)
-      return shows_list
-
     @property
-    def populateShows(self):
-        current_time = datetime.now().strftime("%Y-%m-%d, %H:%M:%S")
-        upcoming_shows = Show.query.filter(Show.artist_id == self.id, Show.start_time > current_time).all()
-        past_shows = Show.query.filter(Show.artist_id == self.id, Show.start_time < current_time).all()
-        
+    def serialize(self):
         return {
             'id': self.id,
             'name': self.name,
@@ -164,10 +113,6 @@ class Artist(db.Model):
             'seeking_description': self.seeking_description,
             'seeking_venue': self.seeking_venue,
             'genres': self.genres,
-            'upcoming_shows': self.getShowsList(upcoming_shows),
-            'past_shows': self.getShowsList(past_shows),
-            'upcoming_shows_count': len(upcoming_shows),
-            'past_shows_count': len(past_shows)
         }
 
 #----------------------------------------------------------------------------#
@@ -216,7 +161,12 @@ def search_venues():
 
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
-  data = Venue.query.filter_by(id=venue_id).first().populateShows
+  current_time = datetime.now().strftime("%Y-%m-%d, %H:%M:%S")
+  # JOIN QUERY
+  venue = Venue.query.join(Show, Venue.shows).filter(Show.venue_id == venue_id).first()
+  data = venue.serialize
+  data['upcoming_shows'] = [show.serialize for show in venue.shows if show.serialize['start_time'] > current_time]
+  data['past_shows'] = [show.serialize for show in venue.shows if show.serialize['start_time'] <= current_time]
   return render_template('pages/show_venue.html', venue=data)
 
 #  Create Venue
@@ -322,7 +272,13 @@ def search_artists():
 
 @app.route('/artists/<int:artist_id>')
 def show_artist(artist_id):
-  data = Artist.query.filter_by(id=artist_id).first().populateShows
+  current_time = datetime.now().strftime("%Y-%m-%d, %H:%M:%S")
+  # JOIN QUERY
+  artist = Artist.query.join(Show, Artist.shows).filter(Show.artist_id == artist_id).first()
+  data = artist.serialize
+  data['upcoming_shows'] = [show.serialize for show in artist.shows if show.serialize['start_time'] > current_time]
+  data['past_shows'] = [show.serialize for show in artist.shows if show.serialize['start_time'] <= current_time]
+
   return render_template('pages/show_artist.html', artist=data)
 
 #  Update
